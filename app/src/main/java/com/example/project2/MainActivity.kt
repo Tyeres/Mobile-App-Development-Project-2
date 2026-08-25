@@ -49,27 +49,43 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun ProjectApp( modifier: Modifier = Modifier) {
-    // Text input for the total Bill
-    var totalBillInput by remember { mutableStateOf("") }
+fun ProjectApp(modifier: Modifier = Modifier) {
 
-
-
-
-    Column(modifier = Modifier.padding(top = 50.dp, start = 14.dp, end = 14.dp)) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.padding(top = 50.dp, start = 14.dp, end = 14.dp)) {
+        // Text for displaying the total per person amount
         TotalPerPersonText("Sample Text", Modifier
             .background(
                 color = Color.LightGray,
                 shape = RoundedCornerShape(8.dp),
             ).border(
                 width = 2.dp,
-                color = Color.Blue,
+                color = Color.Black,
                 shape = RoundedCornerShape(12.dp)
             )
-            .padding(all = 82.dp)
+            .padding( bottom = 40.dp, top = 40.dp)
             .fillMaxWidth())
 
-        TotalBillTextField(totalBillInput, {totalBillInput = it})
+        // Text input for the total Bill field
+        var totalBillInput by remember { mutableStateOf("") }
+        // Updating the text input for the total bill field
+        val onValueChange: (String) -> Unit = {totalBillInput = it}
+
+        // This contains all the fields for input
+        ControlFields(totalBillInput, onValueChange)
+    }
+}
+@Composable
+fun ControlFields(totalBillInput: String, onValueChange: (String) -> Unit) {
+
+    Column(Modifier.border(
+        width = 2.dp,
+        color = Color.LightGray,
+        shape = RoundedCornerShape(12.dp)).
+        padding(12.dp)
+    ) {
+        TotalBillTextField(totalBillInput, onValueChange)
     }
 }
 @Composable
@@ -81,10 +97,12 @@ fun TotalPerPersonText(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = modifier) {
-        // Text outputs
+        // Text outputs.
+        // Total per-person literal string
         Text(
-            text = stringResource(R.string.total_per_person)
+            text = stringResource(R.string.total_per_person),
         )
+        // Total per-person price
         Text(text = text,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold)
