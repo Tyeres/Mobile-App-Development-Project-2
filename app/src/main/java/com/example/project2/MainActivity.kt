@@ -8,17 +8,23 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -27,11 +33,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.project2.ui.theme.Project2Theme
+import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,6 +53,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+// Default percent value
+const val DefaultPercentValue = 15.0f
 
 @Composable
 fun ProjectApp(modifier: Modifier = Modifier) {
@@ -59,33 +67,62 @@ fun ProjectApp(modifier: Modifier = Modifier) {
             .background(
                 color = Color.LightGray,
                 shape = RoundedCornerShape(8.dp),
-            ).border(
+            )
+            .border(
                 width = 2.dp,
                 color = Color.Black,
                 shape = RoundedCornerShape(12.dp)
             )
-            .padding( bottom = 40.dp, top = 40.dp)
+            .padding(bottom = 40.dp, top = 40.dp)
             .fillMaxWidth())
 
         // Text input for the total Bill field
         var totalBillInput by remember { mutableStateOf("") }
         // Updating the text input for the total bill field
-        val onValueChange: (String) -> Unit = {totalBillInput = it}
+        val totalBillOnValueChange: (String) -> Unit = {totalBillInput = it}
+
+        // Input from the slider.
+        var sliderValue by remember { mutableFloatStateOf(DefaultPercentValue) }
+        // Updating the slider
+        // Value is rounded to the nearest tenth
+        val sliderValueOnValueChange: (Float) -> Unit = {sliderValue = (it * 10).roundToInt() / 10f}
 
         // This contains all the fields for input
-        ControlFields(totalBillInput, onValueChange)
+        ControlFields(totalBillInput, totalBillOnValueChange,
+            sliderValue, sliderValueOnValueChange)
     }
 }
 @Composable
-fun ControlFields(totalBillInput: String, onValueChange: (String) -> Unit) {
+fun TipSlider(sliderValue: Float, sliderValueOnValueChange: (Float) -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier) {
+        // Tip text
+        Text(text = stringResource(R.string.tip))
+        // Separate the text with a spacer
+        Spacer(modifier = Modifier.width(170.dp))
+        // Text displaying the selected tip percentage
+        Text(text = "$sliderValue")
+    }
+    Slider(
+        value = sliderValue,
+        onValueChange = sliderValueOnValueChange,
+        valueRange = 15f..40f,
+        steps = 10
+    )
+}
+@Composable
+fun ControlFields(totalBillInput: String, totalBillOnValueChange: (String) -> Unit,
+                  sliderValue: Float, sliderValueOnValueChange: (Float) -> Unit) {
 
-    Column(Modifier.border(
-        width = 2.dp,
-        color = Color.LightGray,
-        shape = RoundedCornerShape(12.dp)).
-        padding(12.dp)
+    Column(Modifier
+        .border(
+            width = 2.dp,
+            color = Color.LightGray,
+            shape = RoundedCornerShape(12.dp)
+        )
+        .padding(12.dp)
     ) {
-        TotalBillTextField(totalBillInput, onValueChange)
+        TotalBillTextField(totalBillInput, totalBillOnValueChange)
+        TipSlider(sliderValue, sliderValueOnValueChange, Modifier.padding(10.dp))
     }
 }
 @Composable
@@ -99,9 +136,7 @@ fun TotalPerPersonText(
         modifier = modifier) {
         // Text outputs.
         // Total per-person literal string
-        Text(
-            text = stringResource(R.string.total_per_person),
-        )
+        Text(text = stringResource(R.string.total_per_person))
         // Total per-person price
         Text(text = text,
             fontSize = 24.sp,
@@ -117,10 +152,10 @@ fun TotalBillTextField(
     OutlinedTextField(
         value = totalBillInput,
         onValueChange = onValueChange,
+        leadingIcon = {Text("$")},
         label = { Text(stringResource(R.string.tip_amount)) },
         modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp),
+            .fillMaxWidth(),
         colors =
             TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Blue,
