@@ -37,6 +37,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.project2.ui.theme.Project2Theme
+import java.text.NumberFormat
 import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
@@ -58,12 +59,27 @@ const val DefaultPercentValue = 15.0f
 
 @Composable
 fun ProjectApp(modifier: Modifier = Modifier) {
+    // Text input for the total Bill field
+    var totalBillInput: String by remember { mutableStateOf("") }
+    // Updating the text input for the total bill field
+    val totalBillOnValueChange: (String) -> Unit = {totalBillInput = it}
+
+    // Input from the slider.
+    var sliderValue: Float by remember { mutableFloatStateOf(DefaultPercentValue) }
+    // Updating the slider.
+    // Value is rounded to the nearest tenth.
+    val sliderValueOnValueChange: (Float) -> Unit = {sliderValue = (it * 10).roundToInt() / 10f}
+
+    // Convert the string input to a float
+    val numberTotal: Float = totalBillInput.toFloatOrNull() ?: 0f
+    val calculatedTip = calculateTip(amount = numberTotal, tipPercent = sliderValue)
 
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.padding(top = 50.dp, start = 14.dp, end = 14.dp)) {
         // Text for displaying the total per person amount
-        TotalPerPersonText("Sample Text", Modifier
+        TotalPerPersonText(
+            calculatedTip, Modifier
             .background(
                 color = Color.LightGray,
                 shape = RoundedCornerShape(8.dp),
@@ -76,16 +92,7 @@ fun ProjectApp(modifier: Modifier = Modifier) {
             .padding(bottom = 40.dp, top = 40.dp)
             .fillMaxWidth())
 
-        // Text input for the total Bill field
-        var totalBillInput by remember { mutableStateOf("") }
-        // Updating the text input for the total bill field
-        val totalBillOnValueChange: (String) -> Unit = {totalBillInput = it}
 
-        // Input from the slider.
-        var sliderValue by remember { mutableFloatStateOf(DefaultPercentValue) }
-        // Updating the slider
-        // Value is rounded to the nearest tenth
-        val sliderValueOnValueChange: (Float) -> Unit = {sliderValue = (it * 10).roundToInt() / 10f}
 
         // This contains all the fields for input
         ControlFields(totalBillInput, totalBillOnValueChange,
@@ -153,7 +160,7 @@ fun TotalBillTextField(
         value = totalBillInput,
         onValueChange = onValueChange,
         leadingIcon = {Text("$")},
-        label = { Text(stringResource(R.string.tip_amount)) },
+        label = { Text(stringResource(R.string.dollar_amount)) },
         modifier = modifier
             .fillMaxWidth(),
         colors =
@@ -162,6 +169,10 @@ fun TotalBillTextField(
                 unfocusedIndicatorColor = Color.Black
             )
     )
+}
+internal fun calculateTip(amount: Float, tipPercent: Float = DefaultPercentValue): String {
+    val tip = tipPercent / 100.0 * amount
+    return NumberFormat.getCurrencyInstance().format(tip)
 }
 
 @Preview(showBackground = true)
