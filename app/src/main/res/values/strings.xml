@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Project 2</string>
     <string name="tip_amount">Tip Amount</string>
+    <string name="total_per_person">Total Per Person</string>
 </resources>
