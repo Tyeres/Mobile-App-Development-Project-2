@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
@@ -25,11 +28,13 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -61,12 +66,18 @@ class MainActivity : ComponentActivity() {
 const val DEFAULT_PERCENT_VALUE = 15.0f
 
 // Gets the dollar amount per person after applying the tip to the total
-fun calculateTotalPerPerson(numberTotal: Float, tipPercent: Float): String {
-    return NumberFormat.getCurrencyInstance().format(numberTotal * (1 + (tipPercent / 100.0)))
+fun calculateTotalPerPerson(numberTotal: Float, tipPercent: Float, splitNumber: Int = 1): String {
+    return NumberFormat.getCurrencyInstance().format(numberTotal * (1 + (tipPercent / 100.0)) / splitNumber)
 }
 
 @Composable
 fun ProjectApp(modifier: Modifier = Modifier) {
+    // This is the number of people splitting the bill
+    var personCount: Int by remember { mutableIntStateOf(1) }
+    // Increment the personCount
+    val personCountOnChangeIncrement: () -> Unit = {personCount++}
+    // Decrement the personCount
+    val personCountOnChangeDecrement: () -> Unit = {personCount--}
     // Text input for the total Bill field
     var totalBillInput: String by remember { mutableStateOf("") }
     // Updating the text input for the total bill field
@@ -103,8 +114,11 @@ fun ProjectApp(modifier: Modifier = Modifier) {
 
 
         // This contains all the fields for input
-        ControlFields(totalBillInput, totalBillOnValueChange,
-            tipPercent, sliderValueOnValueChange, calculatedTip)
+        ControlFields(totalBillInput = totalBillInput, totalBillOnValueChange = totalBillOnValueChange,
+            tipPercent = tipPercent, sliderValueOnValueChange = sliderValueOnValueChange,
+            tip = calculatedTip, personCount = personCount,
+            personCountOnChangeIncrement = personCountOnChangeIncrement,
+            personCountOnChangeDecrement = personCountOnChangeDecrement)
     }
 }
 @Composable
@@ -128,10 +142,38 @@ fun TipSlider(tipPercent: Float, sliderValueOnValueChange: (Float) -> Unit,tip: 
         steps = (25 - DEFAULT_PERCENT_VALUE - 1).toInt()
     )
 }
-// TODO After the "Tip" String, a dollar amount should be shown. The tip percent should be lower.
 @Composable
-fun ControlFields(totalBillInput: String, totalBillOnValueChange: (String) -> Unit,
-                  tipPercent: Float, sliderValueOnValueChange: (Float) -> Unit, tip: String) {
+fun SplitSelector(
+    personCount: Int,
+    personCountOnChangeIncrement: () -> Unit,
+    personCountOnChangeDecrement: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+        Text("Split")
+        Spacer(Modifier.width(170.dp))
+        Button(onClick = personCountOnChangeDecrement) {
+            Text("-", fontSize = 23.sp)
+        }
+        // Note: This padding extends to raise the dollar amount text field and the tip slider
+        //       when the row has no modifier padding
+        Text("$personCount", modifier = Modifier.padding(15.dp))
+        Button(onClick = personCountOnChangeIncrement) {
+            Text("+", fontSize = 23.sp)
+        }
+
+    }
+}
+@Composable
+fun ControlFields(
+    totalBillInput: String,
+    totalBillOnValueChange: (String) -> Unit,
+    tipPercent: Float,
+    sliderValueOnValueChange: (Float) -> Unit,
+    tip: String,
+    personCount: Int,
+    personCountOnChangeIncrement: () -> Unit,
+    personCountOnChangeDecrement: () -> Unit) {
 
     Column(Modifier
         .border(
@@ -141,7 +183,14 @@ fun ControlFields(totalBillInput: String, totalBillOnValueChange: (String) -> Un
         )
         .padding(12.dp)
     ) {
+        // This is the tip selection text field
         TotalBillTextField(totalBillInput, totalBillOnValueChange)
+        SplitSelector(
+            personCount = personCount,
+            personCountOnChangeIncrement = personCountOnChangeIncrement,
+            personCountOnChangeDecrement = personCountOnChangeDecrement,
+            modifier = Modifier.padding(top = 10.dp, bottom = 10.dp))
+        // This contains all the text in relation to the tip, and it contains the slider
         TipSlider(tipPercent, sliderValueOnValueChange, tip, Modifier.padding(10.dp))
     }
 }
