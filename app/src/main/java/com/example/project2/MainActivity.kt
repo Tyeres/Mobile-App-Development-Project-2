@@ -10,10 +10,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.project2.ui.theme.Project2Theme
 import java.text.NumberFormat
-import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +60,8 @@ class MainActivity : ComponentActivity() {
 }
 // Default percent value
 const val DEFAULT_PERCENT_VALUE = 15.0f
+// Default max percent value
+const val MAX_PERCENT_VALUE = 25.0f
 
 // Gets the dollar amount per person after applying the tip to the total
 fun calculateTotalPerPerson(numberTotal: Float, tipPercent: Float, splitNumber: Int = 1): String {
@@ -74,10 +72,11 @@ fun calculateTotalPerPerson(numberTotal: Float, tipPercent: Float, splitNumber: 
 fun ProjectApp(modifier: Modifier = Modifier) {
     // This is the number of people splitting the bill
     var personCount: Int by remember { mutableIntStateOf(1) }
-    // Increment the personCount
-    val personCountOnChangeIncrement: () -> Unit = {personCount++}
+    // Increment the personCount. I add the condition so that it doesn't ever get to a 4-digit
+    // number and start pushing the button off the screen.
+    val personCountOnChangeIncrement: () -> Unit = {if (personCount < 998) personCount++}
     // Decrement the personCount
-    val personCountOnChangeDecrement: () -> Unit = {personCount--}
+    val personCountOnChangeDecrement: () -> Unit = {if (personCount > 1) personCount--}
     // Text input for the total Bill field
     var totalBillInput: String by remember { mutableStateOf("") }
     // Updating the text input for the total bill field
@@ -98,7 +97,7 @@ fun ProjectApp(modifier: Modifier = Modifier) {
         modifier = Modifier.padding(top = 50.dp, start = 14.dp, end = 14.dp)) {
         // Text for displaying the total per person amount
         TotalPerPersonText(
-            calculateTotalPerPerson(numberTotal, tipPercent), Modifier
+            calculateTotalPerPerson(numberTotal, tipPercent, personCount), Modifier
             .background(
                 color = Color.LightGray,
                 shape = RoundedCornerShape(8.dp),
@@ -137,9 +136,8 @@ fun TipSlider(tipPercent: Float, sliderValueOnValueChange: (Float) -> Unit,tip: 
     Slider(
         value = tipPercent,
         onValueChange = sliderValueOnValueChange,
-        valueRange = DEFAULT_PERCENT_VALUE..25f,
-        // 25 is for the max range
-        steps = (25 - DEFAULT_PERCENT_VALUE - 1).toInt()
+        valueRange = DEFAULT_PERCENT_VALUE..MAX_PERCENT_VALUE,
+        steps = (MAX_PERCENT_VALUE - DEFAULT_PERCENT_VALUE - 1).toInt()
     )
 }
 @Composable
@@ -151,7 +149,7 @@ fun SplitSelector(
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         Text("Split")
-        Spacer(Modifier.width(170.dp))
+        Spacer(Modifier.width(120.dp))
         Button(onClick = personCountOnChangeDecrement) {
             Text("-", fontSize = 23.sp)
         }
