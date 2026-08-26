@@ -12,10 +12,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
@@ -33,6 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,7 +58,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 // Default percent value
-const val DefaultPercentValue = 15.0f
+const val DEFAULT_PERCENT_VALUE = 15.0f
+
+// Gets the dollar amount per person after applying the tip to the total
+fun calculateTotalPerPerson(numberTotal: Float, tipPercent: Float): String {
+    return NumberFormat.getCurrencyInstance().format(numberTotal * (1 + (tipPercent / 100.0)))
+}
 
 @Composable
 fun ProjectApp(modifier: Modifier = Modifier) {
@@ -65,21 +73,21 @@ fun ProjectApp(modifier: Modifier = Modifier) {
     val totalBillOnValueChange: (String) -> Unit = {totalBillInput = it}
 
     // Input from the slider.
-    var sliderValue: Float by remember { mutableFloatStateOf(DefaultPercentValue) }
-    // Updating the slider.
-    // Value is rounded to the nearest tenth.
-    val sliderValueOnValueChange: (Float) -> Unit = {sliderValue = (it * 10).roundToInt() / 10f}
+    var tipPercent: Float by remember { mutableFloatStateOf(DEFAULT_PERCENT_VALUE) }
+    // Updating the slider. We don't need to round or modify the value at all because the slider
+    // incremements by whole values.
+    val sliderValueOnValueChange: (Float) -> Unit = {tipPercent = it}
 
     // Convert the string input to a float
     val numberTotal: Float = totalBillInput.toFloatOrNull() ?: 0f
-    val calculatedTip = calculateTip(amount = numberTotal, tipPercent = sliderValue)
+    val calculatedTip = calculateTip(amount = numberTotal, tipPercent = tipPercent)
 
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.padding(top = 50.dp, start = 14.dp, end = 14.dp)) {
         // Text for displaying the total per person amount
         TotalPerPersonText(
-            calculatedTip, Modifier
+            calculateTotalPerPerson(numberTotal, tipPercent), Modifier
             .background(
                 color = Color.LightGray,
                 shape = RoundedCornerShape(8.dp),
@@ -96,29 +104,34 @@ fun ProjectApp(modifier: Modifier = Modifier) {
 
         // This contains all the fields for input
         ControlFields(totalBillInput, totalBillOnValueChange,
-            sliderValue, sliderValueOnValueChange)
+            tipPercent, sliderValueOnValueChange, calculatedTip)
     }
 }
 @Composable
-fun TipSlider(sliderValue: Float, sliderValueOnValueChange: (Float) -> Unit, modifier: Modifier = Modifier) {
+fun TipSlider(tipPercent: Float, sliderValueOnValueChange: (Float) -> Unit,tip: String, modifier: Modifier = Modifier) {
     Row(modifier) {
         // Tip text
         Text(text = stringResource(R.string.tip))
         // Separate the text with a spacer
         Spacer(modifier = Modifier.width(170.dp))
-        // Text displaying the selected tip percentage
-        Text(text = "$sliderValue")
+        // Text displaying the selected tip
+        Text(text = tip)
     }
+    // TipSlider should be called from in a column. So, we should be able to simply call these
+    // without a container.
+    Text("${tipPercent.toInt()}%", modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 12.dp), textAlign = TextAlign.Center)
     Slider(
-        value = sliderValue,
+        value = tipPercent,
         onValueChange = sliderValueOnValueChange,
-        valueRange = 15f..40f,
-        steps = 10
+        valueRange = DEFAULT_PERCENT_VALUE..25f,
+        // 25 is for the max range
+        steps = (25 - DEFAULT_PERCENT_VALUE - 1).toInt()
     )
 }
+// TODO After the "Tip" String, a dollar amount should be shown. The tip percent should be lower.
 @Composable
 fun ControlFields(totalBillInput: String, totalBillOnValueChange: (String) -> Unit,
-                  sliderValue: Float, sliderValueOnValueChange: (Float) -> Unit) {
+                  tipPercent: Float, sliderValueOnValueChange: (Float) -> Unit, tip: String) {
 
     Column(Modifier
         .border(
@@ -129,7 +142,7 @@ fun ControlFields(totalBillInput: String, totalBillOnValueChange: (String) -> Un
         .padding(12.dp)
     ) {
         TotalBillTextField(totalBillInput, totalBillOnValueChange)
-        TipSlider(sliderValue, sliderValueOnValueChange, Modifier.padding(10.dp))
+        TipSlider(tipPercent, sliderValueOnValueChange, tip, Modifier.padding(10.dp))
     }
 }
 @Composable
@@ -163,6 +176,11 @@ fun TotalBillTextField(
         label = { Text(stringResource(R.string.dollar_amount)) },
         modifier = modifier
             .fillMaxWidth(),
+        // Keyboard customization
+        keyboardOptions = KeyboardOptions.Default.copy(
+            keyboardType = KeyboardType.Number,
+            imeAction = ImeAction.Done
+        ),
         colors =
             TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Blue,
@@ -170,7 +188,7 @@ fun TotalBillTextField(
             )
     )
 }
-internal fun calculateTip(amount: Float, tipPercent: Float = DefaultPercentValue): String {
+internal fun calculateTip(amount: Float, tipPercent: Float = DEFAULT_PERCENT_VALUE): String {
     val tip = tipPercent / 100.0 * amount
     return NumberFormat.getCurrencyInstance().format(tip)
 }
