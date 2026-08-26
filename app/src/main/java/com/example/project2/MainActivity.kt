@@ -1,3 +1,13 @@
+/*
+Name: Aidan Snyder
+Project Due Date: 9/1/2026
+Project 2: Tip Calculator App
+Project Description:
+This program is an Android app that takes a dollar amount and a selected tip as inputs.
+These values are used to calculate the tip dollar amount, and it also applies it to the
+dollar amount as a sum so that the user knows how much to pay total. The app also lets the user
+split the bill between a selected number of individuals.
+*/
 package com.example.project2
 
 import android.os.Bundle
@@ -74,7 +84,7 @@ fun ProjectApp(modifier: Modifier = Modifier) {
     var personCount: Int by remember { mutableIntStateOf(1) }
     // Increment the personCount. I add the condition so that it doesn't ever get to a 4-digit
     // number and start pushing the button off the screen.
-    val personCountOnChangeIncrement: () -> Unit = {if (personCount < 998) personCount++}
+    val personCountOnChangeIncrement: () -> Unit = {if (personCount < 999) personCount++}
     // Decrement the personCount
     val personCountOnChangeDecrement: () -> Unit = {if (personCount > 1) personCount--}
     // Text input for the total Bill field
@@ -92,6 +102,7 @@ fun ProjectApp(modifier: Modifier = Modifier) {
     val numberTotal: Float = totalBillInput.toFloatOrNull() ?: 0f
     val calculatedTip = calculateTip(amount = numberTotal, tipPercent = tipPercent)
 
+    // The column that holds all the UI
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = Modifier.padding(top = 50.dp, start = 14.dp, end = 14.dp)) {
@@ -162,6 +173,8 @@ fun SplitSelector(
 
     }
 }
+// This function accesses all the control fields. Consequently, it must be able to pass
+// all the remembered values to the corresponding UI components.
 @Composable
 fun ControlFields(
     totalBillInput: String,
@@ -235,7 +248,7 @@ fun TotalBillTextField(
             )
     )
 }
-internal fun calculateTip(amount: Float, tipPercent: Float = DEFAULT_PERCENT_VALUE): String {
+fun calculateTip(amount: Float, tipPercent: Float = DEFAULT_PERCENT_VALUE): String {
     val tip = tipPercent / 100.0 * amount
     return NumberFormat.getCurrencyInstance().format(tip)
 }
